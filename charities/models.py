@@ -22,6 +22,31 @@ class Charity(models.Model):
     reg_number = models.CharField(max_length=10)
 
 
+class TaskManager(models.Manager):
+    '''In this function, return all tasks given to the desired user as charity in queryset format.
+    For example, if the desired user was not a charity, obviously none of the tasks were given as charity and
+     your function should return the value of nothing in the form of a queryset.'''
+
+    def related_tasks_to_charity(self, user):
+        return Task.objects.filter(charity=user.charity)
+
+    '''In this function, return all the Tasks given to the target user as a benefactor in queryset format.
+        For example, if the intended user was not a benefactor, then none of the tasks were given to him as
+         a benefactor, and your function should return none in the form of a queryset.'''
+
+    def related_tasks_to_benefactor(self, user):
+        return Task.objects.filter(assigned_benefactor=user.benefactor)
+
+    '''In this function, return all the Tasks that the intended user has access to in a queryset format.
+        A user has access to Tasks that have been given to the intended user as a benefactor or given to the intended  
+        user as charity or their status is Pending.
+        The task of this function is to return all these tasks as a queryset.'''
+
+    def all_related_tasks_to_user(self, user):
+        return Task.objects.filter(assigned_benefactor=user.benefactor) | Task.objects.filter(
+            charity=user.charity) | Task.objects.filter(state='P')
+
+
 class Task(models.Model):
     STATE_CHOICES = (
         ('A', 'Assigned'),
@@ -40,4 +65,6 @@ class Task(models.Model):
     gender_limit = models.CharField(max_length=1, null=True, blank=True)
     state = models.CharField(max_length=1, choices=STATE_CHOICES, default='P')
     title = models.CharField(max_length=60)
+
+    objects = TaskManager()
 
