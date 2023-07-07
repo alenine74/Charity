@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import status, generics
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
@@ -83,3 +80,30 @@ class Tasks(generics.ListCreateAPIView):
                 exclude_lookups[name] = param
 
         return queryset.filter(**filter_lookups).exclude(**exclude_lookups)
+
+
+class TaskRequest(APIView):
+    permission_classes = (IsAuthenticated, IsBenefactor)
+
+    def get(self, request, task_id):
+        if request.user.benefactor is None:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        task = get_object_or_404(Task, id=task_id)
+        if task.state != Task.TaskStatus.PENDING:
+            return Response(data={'detail': 'This task is not pending.'}, status=status.HTTP_404_NOT_FOUND)
+        task.state = Task.TaskStatus.WAITING
+        # task.benefactor = request.user.benefactor
+        task.assign_to_benefactor(request.user.benefactor)
+        task.save()
+        return Response(
+            data={'detail': 'Request sent.'},
+            status=status.HTTP_200_OK
+        )
+
+
+class TaskResponse(APIView):
+    pass
+
+
+class DoneTask(APIView):
+    pass
